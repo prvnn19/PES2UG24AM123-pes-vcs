@@ -59,13 +59,13 @@ Reads the stored file, parses the null-byte-terminated header to extract the obj
 
 The test suite `./test_objects` exercises three scenarios: blob storage and retrieval, deduplication (same content produces a single stored file), and integrity checking (a bit-flipped object is detected). All three pass.
 
-![Phase 1 test output — test_objects passing all three scenarios](screenshots/phase1_test_objects.png)
+![Phase 1 test output — test_objects passing all three scenarios](Screenshots/phase1_test_objects.png)
 
 ---
 
 ## 3. Phase 2 — Tree Objects
 
-![Phase 2 terminal output — tree test results](screenshots/phase2_tree_output.png)
+![Phase 2 terminal output — tree test results](Screenshots/phase2_tree_output.png)
 
 ### 3.1 Overview
 
