@@ -111,7 +111,7 @@ Reads the target file from disk, calls `object_write` to store it as a blob, the
 
 After running `./pes init`, creating `file1.txt`, and executing `./pes add file1.txt`, `./pes status` correctly reports the file as staged. Untracked source files are listed under *Untracked files*. `.pes/index` contains the expected single-line entry.
 
-![Phase 3 test output — pes init, add, status, and index file contents](screenshots/phase3_index_test.png)
+![Phase 3 test output — pes init, add, status, and index file contents](Screenshots/phase3_index_test.png)
 
 ---
 
@@ -142,7 +142,7 @@ The function performs the following steps in order:
 
 Three sequential commits were made (*Initial commit*, *Add world*, *Add farewell*). `./pes log` walks the parent-pointer chain and prints all three commits with correct hashes, timestamps, authors, and messages. The integration test `make test-integration` also passes.
 
-![Phase 4 test output — three commits and pes log output](screenshots/phase4_commits_log.png)
+![Phase 4 test output — three commits and pes log output](Screenshots/phase4_commits_log.png)
 
 ---
 
