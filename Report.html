@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PES-VCS Implementation Report</title>
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,opsz,wght@0,8..60,300;0,8..60,400;0,8..60,600;1,8..60,300;1,8..60,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --text: #1a1a1a;
+    --muted: #555;
+    --faint: #888;
+    --border: #ccc;
+    --border-light: #e0e0e0;
+    --accent: #1a1a1a;
+    --page-width: 720px;
+    --font-body: 'Source Serif 4', Georgia, serif;
+    --font-mono: 'JetBrains Mono', monospace;
+  }
+
+  body {
+    font-family: var(--font-body);
+    font-size: 11pt;
+    line-height: 1.75;
+    color: var(--text);
+    background: #fff;
+    max-width: var(--page-width);
+    margin: 0 auto;
+    padding: 48px 40px 72px;
+  }
+
+  /* ── HEADER ── */
+  .report-header {
+    border-bottom: 1.5px solid var(--text);
+    padding-bottom: 20px;
+    margin-bottom: 36px;
+  }
+  .report-header h1 {
+    font-size: 19pt;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    margin-bottom: 14px;
+    line-height: 1.2;
+  }
+  .meta-grid {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 3px 24px;
+    font-size: 9.5pt;
+    font-family: var(--font-mono);
+  }
+  .meta-label { color: var(--faint); }
+  .meta-value { color: var(--text); }
+  .meta-value a { color: var(--text); text-decoration: underline; text-underline-offset: 2px; }
+
+  /* ── SECTION HEADERS ── */
+  .section-title {
+    font-size: 13pt;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    margin: 40px 0 20px;
+    padding-bottom: 6px;
+    border-bottom: 0.75px solid var(--border);
+  }
+  .phase-title {
+    font-size: 10.5pt;
+    font-weight: 600;
+    color: var(--text);
+    margin: 28px 0 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    font-family: var(--font-mono);
+    font-size: 8.5pt;
+  }
+
+  /* ── SCREENSHOTS ── */
+  .screenshot-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-bottom: 6px;
+  }
+  .screenshot-box {
+    border: 0.75px solid var(--border-light);
+    border-radius: 4px;
+    overflow: hidden;
+  }
+  .screenshot-box img {
+    width: 100%;
+    display: block;
+  }
+  .ss-caption {
+    font-family: var(--font-mono);
+    font-size: 7.5pt;
+    color: var(--faint);
+    text-align: center;
+    padding: 4px 0 5px;
+    background: #fafafa;
+    border-top: 0.75px solid var(--border-light);
+  }
+
+  /* ── ANALYSIS QUESTIONS ── */
+  .question-block {
+    margin-bottom: 32px;
+    padding: 0;
+  }
+  .q-header {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+    margin-bottom: 10px;
+  }
+  .q-num {
+    font-family: var(--font-mono);
+    font-size: 8pt;
+    color: var(--faint);
+    background: #f2f2f2;
+    border: 0.75px solid var(--border-light);
+    border-radius: 3px;
+    padding: 2px 6px;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+  .q-title {
+    font-size: 10.5pt;
+    font-weight: 600;
+    color: var(--text);
+    line-height: 1.4;
+  }
+  .q-prompt {
+    font-size: 9.5pt;
+    font-style: italic;
+    color: var(--muted);
+    margin-bottom: 10px;
+    padding-left: 1px;
+    border-left: 2px solid var(--border-light);
+    padding-left: 10px;
+  }
+  .q-answer {
+    font-size: 10.5pt;
+    color: var(--text);
+    line-height: 1.8;
+  }
+  .q-answer p { margin-bottom: 8px; }
+  .q-answer ol, .q-answer ul {
+    padding-left: 20px;
+    margin: 6px 0 8px;
+  }
+  .q-answer li { margin-bottom: 4px; }
+  .q-answer strong { font-weight: 600; }
+  .q-answer code {
+    font-family: var(--font-mono);
+    font-size: 8.5pt;
+    background: #f2f2f2;
+    padding: 1px 4px;
+    border-radius: 3px;
+    color: #333;
+  }
+
+  /* ── MATH ── */
+  .math {
+    font-family: var(--font-mono);
+    font-size: 8.5pt;
+    font-style: normal;
+    background: #f7f7f7;
+    padding: 2px 5px;
+    border-radius: 3px;
+  }
+
+  /* ── DIVIDER ── */
+  .divider {
+    border: none;
+    border-top: 0.75px solid var(--border-light);
+    margin: 36px 0;
+  }
+
+  /* ── PRINT ── */
+  @media print {
+    body { padding: 20px 24px; }
+    .screenshot-box { page-break-inside: avoid; }
+    .screenshot-box img { width: 100%; max-height: 400px; object-fit: contain; }
+    .section-title { page-break-after: avoid; }
+    .question-block { page-break-inside: avoid; }
+  }
+</style>
+</head>
+<body>
+
+<header class="report-header">
+  <h1>PES-VCS Implementation Report</h1>
+  <div class="meta-grid">
+    <span class="meta-label">Author</span>
+    <span class="meta-value">Prajwalindra H</span>
+    <span class="meta-label">SRN</span>
+    <span class="meta-value">PES2UG24AM117</span>
+    <span class="meta-label">Repository</span>
+    <span class="meta-value"><a href="https://github.com/proindra/PES2UG24AM117-pes-vcs">github.com/proindra/PES2UG24AM117-pes-vcs</a></span>
+  </div>
+</header>
+
+<!-- ════════════════════════════════
+     SECTION 1 — SCREENSHOTS
+════════════════════════════════ -->
+<h2 class="section-title">Implementation Screenshots</h2>
+
+<!-- Phase 1 -->
+<p class="phase-title">Phase 1 — Object Storage Foundation</p>
+<div class="screenshot-grid">
+  <div class="screenshot-box">
+    <img src="Screenshots/SCREENSHOT 1A.png" alt="Screenshot 1A – ./test_objects passing">
+    <div class="ss-caption">1A — ./test_objects passing</div>
+  </div>
+  <div class="screenshot-box">
+    <img src="Screenshots/SCREENSHOT 1B.png" alt="Screenshot 1B – find .pes/objects -type f">
+    <div class="ss-caption">1B — find .pes/objects -type f (sharded dir)</div>
+  </div>
+</div>
+
+<!-- Phase 2 -->
+<p class="phase-title">Phase 2 — Tree Objects</p>
+<div class="screenshot-grid">
+  <div class="screenshot-box">
+    <img src="Screenshots/SCREENSHOT 2A.png" alt="Screenshot 2A – ./test_tree passing">
+    <div class="ss-caption">2A — ./test_tree passing</div>
+  </div>
+  <div class="screenshot-box">
+    <img src="Screenshots/SCREENSHOT 2B.png" alt="Screenshot 2B – xxd on raw tree object">
+    <div class="ss-caption">2B — xxd on raw tree object (hex dump)</div>
+  </div>
+</div>
+
+<!-- Phase 3 -->
+<p class="phase-title">Phase 3 — The Index (Staging Area)</p>
+<div class="screenshot-grid">
+  <div class="screenshot-box">
+    <img src="Screenshots/SCREENSHOT 3A.png" alt="Screenshot 3A – pes status staged files">
+    <div class="ss-caption">3A — pes status — staged files output</div>
+  </div>
+  <div class="screenshot-box">
+    <img src="Screenshots/SCREENSHOT 3B.png" alt="Screenshot 3B – cat .pes/index">
+    <div class="ss-caption">3B — cat .pes/index (raw index file)</div>
+  </div>
+</div>
+
+<!-- Phase 4 -->
+<p class="phase-title">Phase 4: Commits and History</p>
+<div class="screenshot-grid">
+  <div class="screenshot-box">
+    <img src="Screenshots/SCREENSHOT 4A.png" alt="Screenshot 4A – pes log output">
+    <div class="ss-caption">4A — pes log output</div>
+  </div>
+  <div class="screenshot-box">
+    <img src="Screenshots/SCREENSHOT 4B.png" alt="Screenshot 4B – object store growth">
+    <div class="ss-caption">4B — object store growth after commits</div>
+  </div>
+  <div class="screenshot-box">
+    <img src="Screenshots/SCREENSHOT 4C.png" alt="Screenshot 4C – HEAD and main refs">
+    <div class="ss-caption">4C — HEAD and main refs (reference chain)</div>
+  </div>
+  <div class="screenshot-box">
+    <img src="Screenshots/FINAL SCREENSHOT part 1.png" alt="Final Screenshot Part 1 – make test-integration passing">
+    <div class="ss-caption">Final — make test-integration passing (part 1)</div>
+  </div>
+  <div class="screenshot-box">
+    <img src="Screenshots/FINAL SCREENSHOT part 2.png" alt="Final Screenshot Part 2 – make test-integration passing">
+    <div class="ss-caption">Final — make test-integration passing (part 2)</div>
+  </div>
+</div>
+
+<hr class="divider">
+
+<!-- ════════════════════════════════
+     SECTION 2 — ANALYSIS QUESTIONS
+════════════════════════════════ -->
+<h2 class="section-title">Phase 5 &amp; 6: Analysis-Only Questions</h2>
+
+<!-- Q5.1 -->
+<div class="question-block">
+  <div class="q-header">
+    <span class="q-num">Q5.1</span>
+    <span class="q-title">Branching and Checkout Implementation</span>
+  </div>
+  <p class="q-prompt">How to implement checkout — what files need to change in <code>.pes/</code>, and what must happen to the working directory? What makes this operation complex?</p>
+  <div class="q-answer">
+    <p>To implement <code>pes checkout &lt;branch&gt;</code>, the system must first read the branch reference file (e.g., <code>.pes/refs/heads/&lt;branch&gt;</code>) to find the target commit hash. From that commit, it reads the root tree hash and recursively walks the tree to reconstruct the directory and file structure in the physical working directory.</p>
+    <p>Inside <code>.pes/</code>, the <code>HEAD</code> file must be updated to point to the newly checked-out branch (<code>ref: refs/heads/&lt;branch&gt;</code>), and the <code>.pes/index</code> file must be rewritten to match the exact state of the newly loaded tree.</p>
+    <p>The complexity lies in state management. The operation must safely delete files that exist in the current branch but not the target branch, while strictly avoiding the deletion or overwriting of any uncommitted work (dirty files) the user currently has in their working directory.</p>
+  </div>
+</div>
+
+<!-- Q5.2 -->
+<div class="question-block">
+  <div class="q-header">
+    <span class="q-num">Q5.2</span>
+    <span class="q-title">Detecting a Dirty Working Directory</span>
+  </div>
+  <p class="q-prompt">Describe how you would detect this "dirty working directory" conflict using only the index and the object store.</p>
+  <div class="q-answer">
+    <p>A "dirty" working directory occurs when the working files do not match the currently staged index or the latest commit. To detect a conflict during checkout:</p>
+    <ol>
+      <li>Scan the working directory and calculate the hashes of all tracked files (or use <code>stat</code> metadata like <code>mtime</code> and <code>size</code> for a fast comparison against the index, as implemented in <code>index_status</code>).</li>
+      <li>Compare the index against the target branch's root tree.</li>
+      <li>If a file has uncommitted modifications (dirty) <em>and</em> that specific file differs between the current HEAD tree and the target branch tree, a conflict is triggered. The checkout must refuse to run to prevent silently overwriting the user's unsaved local changes.</li>
+    </ol>
+  </div>
+</div>
+
+<!-- Q5.3 -->
+<div class="question-block">
+  <div class="q-header">
+    <span class="q-num">Q5.3</span>
+    <span class="q-title">Detached HEAD State</span>
+  </div>
+  <p class="q-prompt">What happens if you make commits in this state? How could a user recover those commits?</p>
+  <div class="q-answer">
+    <p>In a Detached HEAD state, the <code>.pes/HEAD</code> file contains a raw commit hash instead of a branch reference (like <code>ref: refs/heads/main</code>). If you make commits in this state, the new commit objects are successfully created in the object store, and HEAD moves to point to them. However, no branch reference file is updated.</p>
+    <p>If the user then checks out a different branch (e.g., <code>pes checkout main</code>), HEAD is rewritten. The commits made during the detached state become "unreachable" or "dangling" because no branch pointer references them. To recover them, the user must remember the hash of the last detached commit and create a new branch pointing to it. In a real Git system, the user could use <code>git reflog</code> — which keeps a local history of where HEAD has pointed — to find the lost hash and recover the branch.</p>
+  </div>
+</div>
+
+<hr class="divider">
+
+<!-- Q6.1 -->
+<div class="question-block">
+  <div class="q-header">
+    <span class="q-num">Q6.1</span>
+    <span class="q-title">Garbage Collection and Space Reclamation</span>
+  </div>
+  <p class="q-prompt">Describe an algorithm to find and delete these objects. What data structure would you use to track "reachable" hashes efficiently?</p>
+  <div class="q-answer">
+    <p>A standard Mark-and-Sweep algorithm is required for garbage collection (GC).</p>
+    <ol>
+      <li><strong>Mark Phase:</strong> Iterate through all branch files in <code>.pes/refs/heads/</code> and the <code>HEAD</code> file. For each commit found, mark it as reachable. Then traverse its parent commits recursively, marking all of them. For every marked commit, load its root tree, and recursively mark all sub-trees and blobs it references.</li>
+      <li><strong>Sweep Phase:</strong> Iterate through all files in the <code>.pes/objects/</code> directory. If a file's hash is not in the "marked" collection, it is unreachable and can be safely deleted.</li>
+    </ol>
+    <p>The most efficient data structure for tracking reachable hashes is a <strong>Hash Set</strong>. It provides <span class="math">O(1)</span> lookups and prevents processing the same tree or blob multiple times. Even with 100,000 commits, deduplication ensures the traversal remains efficient by halting recursion when an already-marked object is encountered.</p>
+  </div>
+</div>
+
+<!-- Q6.2 -->
+<div class="question-block">
+  <div class="q-header">
+    <span class="q-num">Q6.2</span>
+    <span class="q-title">Garbage Collection Race Conditions</span>
+  </div>
+  <p class="q-prompt">Why is it dangerous to run garbage collection concurrently with a commit operation? Describe a race condition. How does Git's real GC avoid this?</p>
+  <div class="q-answer">
+    <p>Running GC concurrently with a commit operation introduces a severe race condition. Consider the following sequence:</p>
+    <ol>
+      <li>A user runs <code>pes add file.txt</code>. A new blob object is written to <code>.pes/objects/</code>.</li>
+      <li>Immediately after, a concurrent GC process begins its Mark phase. Because the user hasn't run <code>pes commit</code> yet, this new blob is not referenced by any commit or tree, so GC marks it as unreachable.</li>
+      <li>As the user initiates <code>pes commit</code>, the GC enters its Sweep phase and deletes the newly created blob.</li>
+      <li>The commit completes, creating a tree that points to a now-deleted blob — resulting in a <strong>corrupted repository</strong>.</li>
+    </ol>
+    <p>Real Git avoids this by enforcing a <strong>grace period</strong> (typically 2 weeks). During <code>git gc</code>, any unreachable object whose modification timestamp is newer than the grace period is strictly preserved. This ensures that objects currently being staged or generated by concurrent commands are never deleted prematurely.</p>
+  </div>
+</div>
+
+</body>
+</html>
